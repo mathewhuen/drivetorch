@@ -7,7 +7,7 @@ from typing import Optional, Union
 from zarr import open as zarr_open
 
 
-from drivetorch.handler import DriveTensorHandler
+# from drivetorch.handler import DriveTensorHandler  # For trace
 
 
 # TODO:
@@ -33,7 +33,7 @@ class DriveTensor:
         store_data: dict = None,
         from_numpy: bool = False,
         as_param: bool = False,
-        handler: Optional[DriveTensorHandler] = None,
+        # handler: Optional[DriveTensorHandler] = None,  # for trace
         **kwargs,
     ):
         r"""
@@ -112,7 +112,7 @@ class DriveTensor:
         #    '_store_data',
         #    '_kwargs',
         #]
-        self._handler = handler
+        # self._handler = handler  # for trace
 
     def __getattr__(self, attr):
         if attr == 'shape':
@@ -152,8 +152,8 @@ class DriveTensor:
         return f"""<DriveTensor with shape {tuple(self._shape)} at "{self._store_data['store']}">"""
 
     def get_tensor(self):
-        if self._handler is not None:
-            self._handler.ping(self)
+        # if self._handler is not None:  # for trace
+        #     self._handler.ping(self)  # for trace
         return torch.from_numpy(self._tensor[:], **self._kwargs)
 
     @classmethod
