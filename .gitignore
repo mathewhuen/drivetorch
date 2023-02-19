@@ -1,0 +1,10 @@
+# IDE/editor directories
+.vs/
+.idea/
+
+# build directories
+drivetorch.egg-info/
+build/
+
+# testing directory
+temp/
