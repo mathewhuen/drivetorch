@@ -122,3 +122,20 @@ class StoreInfo(dict):
             raise RuntimeError(message)
         return super().__setattr__(attr, value, *args, **kwargs)
 
+
+class StoreInfoGenerator:
+    r"""
+    Helper class for generating multiple :class:`StoreInfo` instances for the same
+    model.
+    """
+
+    def __init__(self, store=None, **kwargs):
+        r"""
+        Initializes :class:`StoreInfoGenerator`\.
+        """
+        self._store = init_storeinfo(store, **kwargs)
+
+    def get_storeinfo(self, identifier):
+        store = deepcopy(self._store)
+        store['identifier'] = identifier
+        return store
