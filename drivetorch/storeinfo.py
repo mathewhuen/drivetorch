@@ -24,7 +24,11 @@ def init_storeinfo(store=None, identifier=None, *args, **kwargs):
             f"passed as type: {type(store)}."
         )
         assert store is None or isinstance(store, str) or isinstance(store, Path), type_error
-        return StoreInfo(store, identifier=identifier, **kwargs)
+        if store is None and 'path' in kwargs:
+            path = kwargs.pop('path')
+        else:
+            path = store
+        return StoreInfo(path, identifier=identifier, **kwargs)
 
 
 def parse_store_path(path=None, identifier=None):
@@ -45,13 +49,17 @@ def parse_store_path(path=None, identifier=None):
     """
     temporary = False
     if identifier is None:
-        identifier = str(current_process().pid)
+        identifier = str(StoreInfo._counter)
+        StoreInfo._counter += 1
     if path is None:
-        path = Path('.drivetorch_temp/')
+        path = Path('.drivetorch_temp/') / str(current_process().pid)
         temporary = True
     elif not isinstance(path, Path):
         path = Path(path)
-    (path / identifier).mkdir(parents=True, exist_ok=True)
+
+    mkdir_path = path / identifier
+    mkdir_path.mkdir(parents=True, exist_ok=True)
+
     return path, identifier, temporary
 
 
@@ -62,19 +70,26 @@ class StoreInfo(dict):
 
     This object is used as kwargs for zarr storage.
     """
-    def __init__(self, store=None, identifier=None, **kwargs):
+
+    _counter = 0
+
+    def __init__(
+            self,
+            path=None,
+            identifier=None,
+            **kwargs,
+    ):
         r"""
         Initializes :class:`StoreInfo`\.
 
         Args:
-            store (Any, optional): str or path object pointing to
+            path (Any, optional): str or path object pointing to
                 directory in which tensors should be stored.
                 If not given, writes to a directory in .drivetorch_temp/
-                Need to change `store` to `path`
         """
         super(StoreInfo, self).__init__()
         self.store_type = 'directory'  # currently, the only supported type
-        path, identifier, temporary = parse_store_path(store, identifier)
+        path, identifier, temporary = parse_store_path(path, identifier)
         self['path'] = path
         self['identifier'] = identifier
         self['temporary'] = temporary
