@@ -47,6 +47,12 @@ def parse_store_path(path=None, identifier=None, ignore_identifier=False):
     Args:
         path (Any, optional): Given path. If not None, returns `path`\.
             Otherwise, returns a path to a folder in .drivetorch_temp/
+        identifier (str, optional): Subdirectory to which drive info should be
+            stored. Ignored if None.
+            Defaults to None.
+        ignore_identifier (bool, optional): If True, ignores any given
+            `identifier` and does not create the identifier directory.
+            Defaults to False.
 
     Returns:
         path-like: Path to the directory to which :class:`DriveTensor`\s
