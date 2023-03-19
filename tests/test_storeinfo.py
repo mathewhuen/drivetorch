@@ -6,8 +6,8 @@ from multiprocessing import current_process
 from drivetorch import (
     init_storeinfo,
     StoreInfo,
-    StoreInfoGenerator,
 )
+from drivetorch.storeinfo import ModelStoreInfo
 
 
 
@@ -57,16 +57,16 @@ class TestStoreInfo:
             assert attribute not in store_info
         assert store_info.store == store_info['path'] / store_info['identifier']
 
-class TestStoreInfoGenerator:
+class TestModelStoreInfo:
     r"""
-    :class:`StoreInfoGenerator` unit tests.
+    :class:`ModelStoreInfo` unit tests.
     """
     @pytest.mark.parametrize(
         'store',
         [None, 'storeinfo_test']
     )
     def test_init(self, store):
-        StoreInfoGenerator(store=store)
+        ModelStoreInfo(store=store)
 
     @pytest.mark.parametrize(
         'store,identifier',
@@ -76,8 +76,8 @@ class TestStoreInfoGenerator:
         ]
     )
     def test_get_storeinfo(self, store, identifier):
-        storeinfo_generator = StoreInfoGenerator(store=store)
-        storeinfo = storeinfo_generator.get_storeinfo(identifier=identifier)
+        modelstoreinfo = ModelStoreInfo(store=store)
+        storeinfo = modelstoreinfo.get_storeinfo(identifier=identifier)
         assert storeinfo['identifier'] == identifier
 
     @pytest.mark.parametrize(
@@ -85,6 +85,6 @@ class TestStoreInfoGenerator:
         [None, 'storeinfo_test']
     )
     def test_get_storeinfo_fail(self, store):
-        storeinfo_generator = StoreInfoGenerator(store=store)
+        modelstoreinfo = ModelStoreInfo(store=store)
         with pytest.raises(TypeError):
-            storeinfo = storeinfo_generator.get_storeinfo()
+            storeinfo = modelstoreinfo.get_storeinfo()
