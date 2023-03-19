@@ -29,6 +29,8 @@ def init_storeinfo(store=None, identifier=None, general=False, *args, **kwargs):
         if store is None and 'path' in kwargs:
             path = kwargs.pop('path')
         else:
+            if 'path' in kwargs:
+                del kwargs['path']
             path = store
         if general:
             return ModelStoreInfo(path, **kwargs)
@@ -109,7 +111,8 @@ class StoreInfo(dict):
             ignore_identifier,
         )
         self['path'] = path
-        self['identifier'] = identifier
+        if identifier is not None:
+            self['identifier'] = identifier
         self['temporary'] = temporary
 
         # compression
@@ -119,8 +122,14 @@ class StoreInfo(dict):
         # assume loading full array if not specified
         self['chunks'] = kwargs.get('chunks', False)
 
-    def _get_store(self):
-        return self['path'] / self['identifier']
+    def _set_store(self):
+        if self.store_type == 'directory':
+            has_path = self.get('path') is not None
+            has_identifier = self.get('identifier') is not None
+            if has_path and has_identifier:
+                super().__setitem__('store', self['path'] / self['identifier'])
+        else:
+            raise NotImplementedError
 
     def _get_hashpath(self):
         if self.store_type == 'directory':
@@ -128,17 +137,9 @@ class StoreInfo(dict):
         else:
             raise NotImplementedError
 
-    def __getattr__(self, attr, *args, **kwargs):
-        if attr == 'store':
-            return self._get_store()
-        elif attr == 'hashpath':
-            return self._get_hashpath()
-        return super().__getattr__(attr, *args, **kwargs)
 
     def __getitem__(self, item, *args, **kwargs):
-        if item == 'store':
-            return self._get_store()
-        elif item == 'hashpath':
+        if item == 'hashpath':
             return self._get_hashpath()
         return super().__getitem__(item, *args, **kwargs)
 
@@ -154,6 +155,21 @@ class StoreInfo(dict):
             )
             raise RuntimeError(message)
         return super().__setattr__(attr, value, *args, **kwargs)
+
+    def __setitem__(self, item, value, *args, **kwargs):
+        protected_attributes = [
+            'store',
+            'hashpath',
+        ]
+        if item in protected_attributes:
+            message = (
+                f"The '{item}' key-value of {self.__class__.__name__} cannot "
+                "be set directly."
+            )
+            raise RuntimeError(message)
+        super().__setitem__(item, value, *args, **kwargs)
+        if item in ['path', 'identifier']:
+            self._set_store()
 
 
 class ModelStoreInfo(StoreInfo):
@@ -184,8 +200,6 @@ class ModelStoreInfo(StoreInfo):
         #if store is not None
         #self._kwargs.update({'store': store})
 
-    def _get_store(self):
-        raise NotImplementedError
 
     def get_storeinfo(self, identifier):
         r"""
@@ -201,5 +215,4 @@ class ModelStoreInfo(StoreInfo):
         )
         assert isinstance(identifier, str) and identifier != '', error
         store = deepcopy(self)
-        store['identifier'] = identifier
-        return init_storeinfo(**store)
+        return init_storeinfo(identifier=identifier, **store)

@@ -49,13 +49,10 @@ class TestStoreInfo:
     def test_attributes(self):
         store = 'tmp_store'
         store_info = StoreInfo(store=store)
-        attributes = ['path', 'identifier', 'temporary']
+        attributes = ['path', 'identifier', 'temporary', 'store']
         for attribute in attributes:
             assert attribute in store_info
-        non_attributes = ['store']
-        for attribute in non_attributes:
-            assert attribute not in store_info
-        assert store_info.store == store_info['path'] / store_info['identifier']
+        assert store_info['store'] == store_info['path'] / store_info['identifier']
 
 class TestModelStoreInfo:
     r"""
