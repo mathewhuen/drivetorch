@@ -1,9 +1,11 @@
 from copy import deepcopy
 from multiprocessing import current_process
 from pathlib import Path
+import json
 
 
-def init_storeinfo(store=None, identifier=None, *args, **kwargs):
+
+def init_storeinfo(store=None, identifier=None, general=False, *args, **kwargs):
     r"""
     Convenience function for initializing a :class:`StoreInfo` instance
     if not already given.
@@ -28,10 +30,13 @@ def init_storeinfo(store=None, identifier=None, *args, **kwargs):
             path = kwargs.pop('path')
         else:
             path = store
-        return StoreInfo(path, identifier=identifier, **kwargs)
+        if general:
+            return ModelStoreInfo(path, **kwargs)
+        else:
+            return StoreInfo(path, identifier=identifier, **kwargs)
 
 
-def parse_store_path(path=None, identifier=None):
+def parse_store_path(path=None, identifier=None, ignore_identifier=False):
     r"""
     Returns the given store path if not None. Otherwise, creates a
     store path in .drivetorch_temp/ and creates the specified
@@ -48,7 +53,9 @@ def parse_store_path(path=None, identifier=None):
             should be saved.
     """
     temporary = False
-    if identifier is None:
+    if ignore_identifier:
+        identifier = None
+    elif identifier is None:
         identifier = str(StoreInfo._counter)
         StoreInfo._counter += 1
     if path is None:
@@ -57,7 +64,7 @@ def parse_store_path(path=None, identifier=None):
     elif not isinstance(path, Path):
         path = Path(path)
 
-    mkdir_path = path / identifier
+    mkdir_path = path / identifier if identifier is not None else path
     mkdir_path.mkdir(parents=True, exist_ok=True)
 
     return path, identifier, temporary
@@ -77,6 +84,7 @@ class StoreInfo(dict):
             self,
             path=None,
             identifier=None,
+            ignore_identifier=False,
             **kwargs,
     ):
         r"""
@@ -89,7 +97,11 @@ class StoreInfo(dict):
         """
         super(StoreInfo, self).__init__()
         self.store_type = 'directory'  # currently, the only supported type
-        path, identifier, temporary = parse_store_path(path, identifier)
+        path, identifier, temporary = parse_store_path(
+            path,
+            identifier,
+            ignore_identifier,
+        )
         self['path'] = path
         self['identifier'] = identifier
         self['temporary'] = temporary
@@ -138,19 +150,50 @@ class StoreInfo(dict):
         return super().__setattr__(attr, value, *args, **kwargs)
 
 
-class StoreInfoGenerator:
+class ModelStoreInfo(StoreInfo):
     r"""
     Helper class for generating multiple :class:`StoreInfo` instances for the same
     model.
     """
 
-    def __init__(self, store=None, **kwargs):
+    def __init__(self, path=None, **kwargs):
         r"""
-        Initializes :class:`StoreInfoGenerator`\.
+        Initializes :class:`ModelStoreInfo` class.
+
+        This class should be used as a general storage kwargs dict for one
+        model, and the :meth:`get_storeinfo` should be used to get
+        parameter-specific :class:`StoreInfo` instances.
         """
-        self._store = init_storeinfo(store, **kwargs)
+        if 'identifier' in kwargs:
+            del kwargs['identifier']
+        if 'ignore_identifier' in kwargs:
+            del kwargs['ignore_identifier']
+        super().__init__(
+            path=path,
+            identifier=None,
+            ignore_identifier=True,
+            **kwargs,
+        )
+        #self._kwargs = deepcopy(kwargs)
+        #if store is not None
+        #self._kwargs.update({'store': store})
+
+    def _get_store(self):
+        raise NotImplementedError
 
     def get_storeinfo(self, identifier):
-        store = deepcopy(self._store)
+        r"""
+        Returns an instance of :class:`StoreInfo` with the given identifier.
+
+        Args:
+            identifier (str): The identifier to use for the new instance of
+                :class:`StoreInfo`\. Should be a nonempty string.
+        """
+        error = (
+            "'identifier' should be a nonempty string but was "
+            f"'{identifier}'"
+        )
+        assert isinstance(identifier, str) and identifier != '', error
+        store = deepcopy(self)
         store['identifier'] = identifier
-        return store
+        return init_storeinfo(**store)
