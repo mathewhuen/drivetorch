@@ -11,9 +11,21 @@ def init_storeinfo(store=None, identifier=None, general=False, *args, **kwargs):
     if not already given.
 
     Args:
-        store (path-like or StoreInfo, optional): If of type :class:`StoreInfo`\,
-            then just returns store. Otherwise constructs a new instance of
-            :class:`StoreInfo` from given parameters.
+        store (path-like or StoreInfo, optional):
+            If of type :class:`StoreInfo`\, returns the given `store`\.
+            Otherwise constructs a new instance of :class:`StoreInfo` from
+            `path` and the given parameters.
+        identifier (str, optional): A str identifier to be passed to a new
+            instance of :class:`StoreInfo`\.
+            Only used if `general` is False.
+            Note that if `identifier` is None and `general` is True,
+            :class`StoreInfo` will set `identifier` using a process-wide
+            counter.
+            Defaults to None.
+        general (bool, optional): If True, outputs an instance of
+            :class:`ModelStoreInfo` and ignores `identifier`\. Otherwise,
+            outputs an instance of :class:`StoreInfo`\.
+            Defaults to False.
     """
     if isinstance(store, StoreInfo):
         return store
@@ -49,8 +61,8 @@ def parse_store_path(path=None, identifier=None, ignore_identifier=False):
     Args:
         path (Any, optional): Given path. If not None, returns `path`\.
             Otherwise, returns a path to a folder in .drivetorch_temp/
-        identifier (str, optional): Subdirectory to which drive info should be
-            stored. Ignored if None.
+        identifier (str or dict, optional): Subdirectory to which drive info
+            should be stored. Ignored if None.
             Defaults to None.
         ignore_identifier (bool, optional): If True, ignores any given
             `identifier` and does not create the identifier directory.
@@ -101,7 +113,17 @@ class StoreInfo(dict):
         Args:
             path (Any, optional): str or path object pointing to
                 directory in which tensors should be stored.
-                If not given, writes to a directory in .drivetorch_temp/
+                If not given, writes to .drivetorch_temp/[PID] where [PID] is
+                current process ID.
+            identifier (str, optional): A str identifier for the tensor stored
+                with this :class:`StoreInfo`\.
+                If None, a process-wide counter will be used as the identifier
+                (and the counter will be incremented).
+                Defaults to None.
+            ignore_identifier (bool, optional): Flag to ignore the identifier
+                argument. In general, this argument will only be used by
+                :class:`ModelStoreInfo` and can be ignored by the user.
+                Defaults to False.
         """
         super(StoreInfo, self).__init__()
         self.store_type = 'directory'  # currently, the only supported type
@@ -200,6 +222,11 @@ class ModelStoreInfo(StoreInfo):
         Args:
             identifier (str): The identifier to use for the new instance of
                 :class:`StoreInfo`\. Should be a nonempty string.
+
+        Returns:
+            :class:`StoreInfo`\: A :class:`StoreInfo` instance with keys
+            matching those of this object and an additional 'identifier' key
+            with the `identifier` argument as its value.
         """
         error = (
             "'identifier' should be a nonempty string but was "
