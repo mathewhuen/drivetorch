@@ -122,6 +122,13 @@ class StoreInfo(dict):
         # assume loading full array if not specified
         self['chunks'] = kwargs.get('chunks', False)
 
+    def __del__(self):  # delete if empty. or register atexit and delete all
+        try:
+            if self['temporary']:
+                self['store'].rmdir()
+        except Exception as e:
+            pass
+
     def _set_store(self):
         if self.store_type == 'directory':
             has_path = self.get('path') is not None
@@ -130,18 +137,6 @@ class StoreInfo(dict):
                 super().__setitem__('store', self['path'] / self['identifier'])
         else:
             raise NotImplementedError
-
-    def _get_hashpath(self):
-        if self.store_type == 'directory':
-            return self['path'] / 'hash_map.json'
-        else:
-            raise NotImplementedError
-
-
-    def __getitem__(self, item, *args, **kwargs):
-        if item == 'hashpath':
-            return self._get_hashpath()
-        return super().__getitem__(item, *args, **kwargs)
 
     def __setattr__(self, attr, value, *args, **kwargs):
         protected_attributes = [
@@ -196,9 +191,6 @@ class ModelStoreInfo(StoreInfo):
             ignore_identifier=True,
             **kwargs,
         )
-        #self._kwargs = deepcopy(kwargs)
-        #if store is not None
-        #self._kwargs.update({'store': store})
 
 
     def get_storeinfo(self, identifier):
