@@ -1,3 +1,9 @@
+r"""
+The `storeinfo` module has helper functions and classes for working with zarr
+storage.
+"""
+
+
 from copy import deepcopy
 from multiprocessing import current_process
 from pathlib import Path
