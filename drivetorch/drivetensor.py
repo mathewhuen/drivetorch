@@ -8,6 +8,7 @@ from zarr import open as zarr_open
 
 
 # from drivetorch.handler import DriveTensorHandler  # For trace
+from drivetorch.storeinfo import init_storeinfo, StoreInfo
 
 
 # TODO:
@@ -30,7 +31,7 @@ class DriveTensor:
     def __init__(
         self,
         data: ArrayLike,
-        store_data: dict = None,
+        store_data: Union[dict, str, StoreInfo] = None,
         from_numpy: bool = False,
         as_param: bool = False,
         # handler: Optional[DriveTensorHandler] = None,  # for trace
@@ -41,7 +42,11 @@ class DriveTensor:
 
         Args:
             data (`array_like`): Array-like data to wrap.
-            store_data (dict): Metadata for storage.
+            store_data (dict, str, or :class:`StoreInfo`\, optional): Parameters
+                for zarr storage. If a dict, it should include a `store` field
+                that will be used as a storage path. If input is a str, it will
+                be used as a storage path. If input is :class:`StoreInfo`, it
+                will be treated as a dict.
             from_numpy (bool, optional): Data will be initialized with
                 `torch.from_numpy` if True and with torch.as_tensor` if
                 False.
@@ -57,7 +62,7 @@ class DriveTensor:
             <DriveTensor(data=<zarr.core.Array (4,) int64 read-only>, store_data={'store': 'temp.data'})
         """
         assert data is not None
-        assert 'store' in store_data
+        store_data = init_storeinfo(store_data)
         # consider not creating tensor first to reduce the number of copies
         if isinstance(data, DriveTensor):
             tensor_data = tensor = data._tensor[:]
