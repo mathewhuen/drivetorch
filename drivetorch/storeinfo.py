@@ -241,3 +241,24 @@ class ModelStoreInfo(StoreInfo):
         assert isinstance(identifier, str) and identifier != '', error
         store = deepcopy(self)
         return init_storeinfo(identifier=identifier, **store)
+
+    def store_metadata(self, metadata: dict):
+        r"""
+        Save metadata.
+        If the :attr:`store_type` attribute is 'directory', this will save a
+        metadata file to the directory specified by this object's :attr:`path`
+        attribute.
+
+        Args:
+            metadata (dict): The metadata to store.
+
+        Note:
+            :meth:`store_metadata` and :meth:`load_metadata` may be changed in
+            the future to just use a single method that returns a metadata
+            class.
+        """
+        if self.store_type == 'directory':
+            with open(self['path'] / 'metadata.json', 'w') as f:
+                json.dump(metadata, f, indent=2)
+        else:
+            raise NotImplementedError
