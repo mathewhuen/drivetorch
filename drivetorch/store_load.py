@@ -75,3 +75,21 @@ def store(
     metadata = {'hash_map': hash_map}
     model_storeinfo.store_metadata(metadata)
     return model
+
+
+def load(
+        model: Module,
+        storeinfo: Union[str, dict, ModelStoreInfo],
+):
+    model_storeinfo = init_storeinfo(storeinfo, general=True)
+    metadata = model_storeinfo.load_metadata()
+    named_parameters = list(model.named_parameters()) + list(model.named_buffers())
+    for name, parameter in named_parameters:
+        param_hash = metadata['hash_map'][name]
+        storeinfo_instance = model_storeinfo.get_storeinfo(param_hash)
+        drive_tensor = DriveTensor(
+            store_data=storeinfo_instance,
+            from_store=True,
+            as_param=True,
+        )
+        set_nested(model, name.split('.'), drive_tensor)

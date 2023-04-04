@@ -262,3 +262,25 @@ class ModelStoreInfo(StoreInfo):
                 json.dump(metadata, f, indent=2)
         else:
             raise NotImplementedError
+
+    def load_metadata(self):
+        r"""
+        Load metadata.
+        If the :attr:`store_type` attribute is 'directory', this will load the
+        metadata file found in the directory specified by this object's
+        :attr:`path` attribute.
+
+        Returns:
+            dict: Model metadata
+
+        Note:
+            :meth:`store_metadata` and :meth:`load_metadata` may be changed in
+            the future to just use a single method that returns a metadata
+            class.
+        """
+        if self.store_type == 'directory':
+            with open(self['path'] / 'metadata.json', 'rb') as f:
+                metadata = json.load(f)
+        else:
+            raise NotImplementedError
+        return metadata
