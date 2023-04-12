@@ -1,6 +1,6 @@
 r"""
-The :mod:`store_load` module contains functions for storing (and
-eventually loading) PyTorch models to a drive.
+The :mod:`store_load` module contains functions for storing and loading
+PyTorch models to a drive.
 
 Currently, the only implemented storage function is :func:`store`\, but
 it requires loading the entire model before it can be stored.
