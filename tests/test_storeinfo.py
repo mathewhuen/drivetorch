@@ -78,10 +78,22 @@ class TestModelStoreInfo:
         assert storeinfo['identifier'] == identifier
 
     @pytest.mark.parametrize(
+        'store,identifier',
+        [
+            (None, ''),
+            (None, True),
+            ('storeinfo_test', 1),
+        ]
+    )
+    def test_get_storeinfo_fail(self, store, identifier):
+        modelstoreinfo = ModelStoreInfo(store=store)
+        with pytest.raises(AssertionError):
+            storeinfo = modelstoreinfo.get_storeinfo(identifier)
+
+    @pytest.mark.parametrize(
         'store',
         [None, 'storeinfo_test']
     )
-    def test_get_storeinfo_fail(self, store):
+    def test_get_storeinfo_default(self, store):
         modelstoreinfo = ModelStoreInfo(store=store)
-        with pytest.raises(TypeError):
-            storeinfo = modelstoreinfo.get_storeinfo()
+        storeinfo = modelstoreinfo.get_storeinfo()
