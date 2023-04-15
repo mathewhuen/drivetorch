@@ -81,6 +81,25 @@ def load(
         model: Module,
         storeinfo: Union[str, dict, ModelStoreInfo],
 ):
+    r"""
+    Load stored weights.
+
+    Args:
+        model (`torch.nn.Module`): An initialized model.
+        storeinfo (str or dict or :class:`ModelStoreInfo`, optional):
+            Parameters for zarr storage from which all parameter and
+            buffer weights will be loaded.
+            If a str, dict, or ModelStoreInfo, it will be used to create
+            an instance of :class:`ModelStoreInfo`\.
+            If None, model parameters and buffers will be loaded from
+            [CWD]/.drivetorch_temp/[PID]/ where [CWD] is the current
+            working directory and [PID] is the process ID.
+            Defaults to None.
+            Note that using None for the storeinfo argument will only
+            work if the weights to be loaded were stored from the same
+            process and only one unique model needs to be stored and
+            loaded.
+    """
     model_storeinfo = init_storeinfo(storeinfo, general=True)
     metadata = model_storeinfo.load_metadata()
     named_parameters = list(model.named_parameters()) + list(model.named_buffers())
