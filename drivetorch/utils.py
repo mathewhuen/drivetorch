@@ -6,14 +6,14 @@ General utility functions.
 from torch import Tensor, from_numpy
 from torch.nn import Module, Parameter
 from numpy import ndarray
-from typing import Union
+from typing import List, Union
 from hashlib import sha256
 from pickle import dumps
 
 
 def set_nested(
         module: Module,
-        atts: list[str],
+        atts: List[str],
         tensor: Union[Tensor, Parameter],
 ):
     r"""

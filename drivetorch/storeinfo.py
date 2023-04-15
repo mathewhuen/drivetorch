@@ -5,6 +5,7 @@ storage.
 
 
 from copy import deepcopy
+from typing import Dict
 from multiprocessing import current_process
 from pathlib import Path
 import json
@@ -249,7 +250,7 @@ class ModelStoreInfo(StoreInfo):
         store = deepcopy(self)
         return init_storeinfo(identifier=identifier, **store)
 
-    def store_metadata(self, metadata: dict):
+    def store_metadata(self, metadata: Dict):
         r"""
         Save metadata.
         If the :attr:`store_type` attribute is 'directory', this will save a
