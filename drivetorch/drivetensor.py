@@ -1,3 +1,11 @@
+r"""
+:class:`DriveTensor`\s are PyTorch tensor- and parameter-like zarr array
+wrappers. They do not implement every functionality of PyTorch tensors, but
+they should be usable as drop-in replacements for `nn.Parameter`\s for
+inference.
+"""
+
+
 import torch
 import numpy as np
 from numpy import ndarray
@@ -5,6 +13,7 @@ from numpy.typing import ArrayLike
 from warnings import warn
 from typing import Optional, Union
 from zarr import open as zarr_open
+from pathlib import Path
 
 
 # from drivetorch.handler import DriveTensorHandler  # For trace
@@ -30,11 +39,12 @@ class DriveTensor:
     """
     def __init__(
         self,
-        data: ArrayLike,
+        data: ArrayLike = None,
         store_data: Union[dict, str, StoreInfo] = None,
         from_numpy: bool = False,
         as_param: bool = False,
         # handler: Optional[DriveTensorHandler] = None,  # for trace
+        from_store: bool = False,
         **kwargs,
     ):
         r"""
@@ -52,6 +62,9 @@ class DriveTensor:
                 False.
             as_param (bool, optional): To be used as a PyTorch
                 parameter.
+            from_store (bool, optional): If True, does not perform any
+                processing, instead only creating a persistent zarr
+                array.
             **kwargs: Keyword arguments to use when initializing this
                 object's tensor data.
 
@@ -61,8 +74,54 @@ class DriveTensor:
             >>> t
             <DriveTensor(data=<zarr.core.Array (4,) int64 read-only>, store_data={'store': 'temp.data'})
         """
+        if from_store:
+            self._init_from_store(
+                store_data=store_data,
+                as_param=as_param,
+                # handler=handler,
+                **kwargs,
+            )
+        else:
+            self._init(
+                data=data,
+                store_data=store_data,
+                from_numpy=from_numpy,
+                as_param=as_param,
+                # handler=handler,
+                **kwargs,
+            )
+
+    def _init_from_store(
+            self,
+            store_data: Union[dict, str, StoreInfo] = None,
+            as_param: bool = False,
+            # handler: Optional[DriveTensorHandler] = None,  # for trace
+            **kwargs,
+    ):
+        self._tensor = zarr_open(  # make read-only
+            store=store_data['store'],
+            mode='r',
+        )
+        self._store_data = store_data
+        self._kwargs = kwargs
+        self._shape = self._tensor.shape
+        self._is_param = as_param
+        # self._handler = handler  # for trace
+
+    def _init(
+            self,
+            data: ArrayLike,
+            store_data: Union[dict, str, StoreInfo] = None,
+            from_numpy: bool = False,
+            as_param: bool = False,
+            # handler: Optional[DriveTensorHandler] = None,  # for trace
+            **kwargs,
+    ):
         assert data is not None
         store_data = init_storeinfo(store_data)
+        #if isinstance(store_data, str):
+        #    store_data = {'store': store_data}
+        #assert 'store' in store_data
         # consider not creating tensor first to reduce the number of copies
         if isinstance(data, DriveTensor):
             tensor_data = tensor = data._tensor[:]
@@ -187,4 +246,10 @@ class DriveTensor:
     #        return True
     #    return isinstance(instance, cls)
 
+    def __del__(self):
+        #if self._store_data.store_type == 'directory':
+        #    if 'drivetorch.temp' in self._store_data.store:
+        #        # delete zarr object.
+        #        # if final object in drive, delete directory
+        pass
 

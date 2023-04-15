@@ -5,6 +5,7 @@ storage.
 
 
 from copy import deepcopy
+from typing import Dict
 from multiprocessing import current_process
 from pathlib import Path
 import json
@@ -37,7 +38,10 @@ def init_storeinfo(store=None, identifier=None, general=False, *args, **kwargs):
         return store
     if isinstance(store, dict):
         store.update(kwargs)
-        return StoreInfo(identifier=identifier, *args, **kwargs)
+        if general:
+            return ModelStoreInfo(identifier=identifier, *args, **kwargs)
+        else:
+            return StoreInfo(identifier=identifier, *args, **kwargs)
     else:
         type_error = (
             "'store' should be of None, path-like, a dict, or StoreInfo. But "
@@ -221,13 +225,15 @@ class ModelStoreInfo(StoreInfo):
         )
 
 
-    def get_storeinfo(self, identifier):
+    def get_storeinfo(self, identifier=None):
         r"""
         Returns an instance of :class:`StoreInfo` with the given identifier.
 
         Args:
-            identifier (str): The identifier to use for the new instance of
-                :class:`StoreInfo`\. Should be a nonempty string.
+            identifier (str, optional): The identifier to use for the new
+                instance of :class:`StoreInfo`\.
+                If None, the process-wide identifier counter is used.
+                Defaults to None.
 
         Returns:
             :class:`StoreInfo`\: A :class:`StoreInfo` instance with keys
@@ -235,9 +241,54 @@ class ModelStoreInfo(StoreInfo):
             with the `identifier` argument as its value.
         """
         error = (
-            "'identifier' should be a nonempty string but was "
+            "'identifier' should be a nonempty string or None but was "
             f"'{identifier}'"
         )
-        assert isinstance(identifier, str) and identifier != '', error
+        is_none = identifier is None
+        is_nonempty_str = isinstance(identifier, str) and identifier != ''
+        assert is_none or is_nonempty_str, error
         store = deepcopy(self)
         return init_storeinfo(identifier=identifier, **store)
+
+    def store_metadata(self, metadata: Dict):
+        r"""
+        Save metadata.
+        If the :attr:`store_type` attribute is 'directory', this will save a
+        metadata file to the directory specified by this object's :attr:`path`
+        attribute.
+
+        Args:
+            metadata (dict): The metadata to store.
+
+        Note:
+            :meth:`store_metadata` and :meth:`load_metadata` may be changed in
+            the future to just use a single method that returns a metadata
+            class.
+        """
+        if self.store_type == 'directory':
+            with open(self['path'] / 'metadata.json', 'w') as f:
+                json.dump(metadata, f, indent=2)
+        else:
+            raise NotImplementedError
+
+    def load_metadata(self):
+        r"""
+        Load metadata.
+        If the :attr:`store_type` attribute is 'directory', this will load the
+        metadata file found in the directory specified by this object's
+        :attr:`path` attribute.
+
+        Returns:
+            dict: Model metadata
+
+        Note:
+            :meth:`store_metadata` and :meth:`load_metadata` may be changed in
+            the future to just use a single method that returns a metadata
+            class.
+        """
+        if self.store_type == 'directory':
+            with open(self['path'] / 'metadata.json', 'rb') as f:
+                metadata = json.load(f)
+        else:
+            raise NotImplementedError
+        return metadata
